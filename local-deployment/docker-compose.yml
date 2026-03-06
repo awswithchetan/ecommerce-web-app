@@ -1,0 +1,170 @@
+version: '3.8'
+
+services:
+  # LocalStack - AWS services emulator
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=dynamodb,sns,sqs,ses
+      - DEBUG=1
+    volumes:
+      - "./localstack-init:/etc/localstack/init/ready.d"
+    networks:
+      - ecommerce-network
+
+  # PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: ecommerce_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - ecommerce-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Product Service
+  product-service:
+    build: ../services/product-service
+    ports:
+      - "8001:8001"
+    environment:
+      - ENVIRONMENT=local
+      - AWS_REGION=us-east-1
+      - DYNAMODB_ENDPOINT=http://localstack:4566
+      - PRODUCTS_TABLE=products
+    depends_on:
+      localstack:
+        condition: service_started
+    networks:
+      - ecommerce-network
+
+  # Cart Service
+  cart-service:
+    build: ../services/cart-service
+    ports:
+      - "8002:8002"
+    environment:
+      - ENVIRONMENT=local
+      - AWS_REGION=us-east-1
+      - DYNAMODB_ENDPOINT=http://localstack:4566
+      - CARTS_TABLE=carts
+    depends_on:
+      localstack:
+        condition: service_started
+    networks:
+      - ecommerce-network
+
+  # User Service
+  user-service:
+    build: ../services/user-service
+    ports:
+      - "8003:8003"
+    environment:
+      - ENVIRONMENT=local
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=ecommerce_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ecommerce-network
+
+  # Order Service
+  order-service:
+    build: ../services/order-service
+    ports:
+      - "8004:8004"
+    environment:
+      - ENVIRONMENT=local
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=ecommerce_db
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - CART_SERVICE_URL=http://cart-service:8002
+      - USER_SERVICE_URL=http://user-service:8003
+      - PRODUCT_SERVICE_URL=http://product-service:8001
+      - AWS_REGION=us-east-1
+      - SNS_ENDPOINT=http://localstack:4566
+      - SNS_TOPIC_ARN=arn:aws:sns:us-east-1:000000000000:order-events
+    depends_on:
+      postgres:
+        condition: service_healthy
+      localstack:
+        condition: service_started
+      cart-service:
+        condition: service_started
+      user-service:
+        condition: service_started
+      product-service:
+        condition: service_started
+    networks:
+      - ecommerce-network
+
+  # Notification Service
+  notification-service:
+    build: ../services/notification-service
+    environment:
+      - ENVIRONMENT=local
+      - AWS_REGION=us-east-1
+      - SQS_ENDPOINT=http://localstack:4566
+      - SES_ENDPOINT=http://localstack:4566
+      - SQS_QUEUE_URL=http://localstack:4566/000000000000/notification-queue
+      - SENDER_EMAIL=noreply@ecommerce.com
+    depends_on:
+      localstack:
+        condition: service_started
+    networks:
+      - ecommerce-network
+
+  # Nginx - API Gateway simulator
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      product-service:
+        condition: service_started
+      cart-service:
+        condition: service_started
+      user-service:
+        condition: service_started
+      order-service:
+        condition: service_started
+    networks:
+      - ecommerce-network
+
+  # React Frontend
+  frontend:
+    build: ../frontend/react-app
+    ports:
+      - "3000:80"
+    environment:
+      - REACT_APP_API_URL=http://localhost:8080/api
+    depends_on:
+      - nginx
+    networks:
+      - ecommerce-network
+
+networks:
+  ecommerce-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
