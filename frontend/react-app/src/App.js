@@ -31,8 +31,12 @@ function App() {
           const email = user.signInDetails?.loginId || user.username;
           const name = user.username;
           
-          api.createProfile(email, name).catch(() => {
-            // Profile might already exist, ignore error
+          // Check if profile exists, create only if it doesn't
+          api.getProfile().catch(() => {
+            // Profile doesn't exist, create it
+            api.createProfile(email, name).catch(() => {
+              // Ignore any errors during creation
+            });
           });
         }
 
