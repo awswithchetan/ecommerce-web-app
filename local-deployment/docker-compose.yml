@@ -148,17 +148,17 @@ services:
     networks:
       - ecommerce-network
 
-  # React Frontend
-  frontend:
-    build: ../frontend/react-app
-    ports:
-      - "80:80"
-    environment:
-      - REACT_APP_API_URL=http://localhost:8080/api
-    depends_on:
-      - nginx
-    networks:
-      - ecommerce-network
+  # React Frontend (disabled - using npm dev server)
+  # frontend:
+  #   build: ../frontend/react-app
+  #   ports:
+  #     - "80:80"
+  #   environment:
+  #     - REACT_APP_API_URL=http://localhost:8080/api
+  #   depends_on:
+  #     - nginx
+  #   networks:
+  #     - ecommerce-network
 
 networks:
   ecommerce-network:

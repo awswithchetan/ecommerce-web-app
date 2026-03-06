@@ -99,7 +99,21 @@ Wait for all services to start (~2 minutes). You should see:
 - ✅ All 5 microservices running
 - ✅ Nginx running
 
-### 4.2 Start Frontend
+### 4.2 Configure Frontend API URL
+
+Edit `frontend/react-app/.env`:
+
+**For local development:**
+```
+REACT_APP_API_URL=http://localhost:8080/api
+```
+
+**For EC2 deployment:**
+```
+REACT_APP_API_URL=http://<EC2-PUBLIC-IP>:8080/api
+```
+
+### 4.3 Start Frontend
 
 Open a new terminal:
 
