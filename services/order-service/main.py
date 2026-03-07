@@ -1,5 +1,4 @@
 from fastapi import FastAPI, HTTPException, Header
-from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 from models import Order, OrderCreate, OrderItem
 from database import get_db_cursor, init_db
@@ -9,15 +8,6 @@ import boto3
 import json
 
 app = FastAPI(title="Order Service")
-
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 def get_sns_client():
     if settings.environment == "local":
@@ -139,19 +129,19 @@ async def create_order(order: OrderCreate, user_id: str = Header(None, alias="X-
         return order_dict
 
 @app.get("/orders", response_model=List[Order])
-def get_user_orders(user_id: str = Header(None, alias="X-User-Id")):
+async def get_user_orders(user_id: str = Header(None, alias="X-User-Id")):
     """Get all orders for a user"""
     if not user_id:
         user_id = "test-user-123"  # Default for local testing
     
     # First get user's internal ID
-    import httpx
-    try:
-        response = httpx.get(f"{settings.user_service_url}/users/cognito/{user_id}")
-        response.raise_for_status()
-        user = response.json()
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Failed to get user: {str(e)}")
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(f"{settings.user_service_url}/users/cognito/{user_id}")
+            response.raise_for_status()
+            user = response.json()
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Failed to get user: {str(e)}")
     
     with get_db_cursor() as cursor:
         cursor.execute("SELECT * FROM orders WHERE user_id = %s ORDER BY created_at DESC", (user['id'],))

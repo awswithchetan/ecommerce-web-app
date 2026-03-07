@@ -1,5 +1,4 @@
 from fastapi import FastAPI, HTTPException, Header
-from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 from models import Cart, AddItemRequest, UpdateItemRequest
 from database import get_carts_table
@@ -8,15 +7,6 @@ from decimal import Decimal
 import json
 
 app = FastAPI(title="Cart Service")
-
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 def convert_floats_to_decimal(obj):
     """Convert float values to Decimal for DynamoDB"""
