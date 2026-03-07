@@ -32,11 +32,14 @@ function App() {
           const name = user.username;
           
           // Check if profile exists, create only if it doesn't
-          api.getProfile().catch(() => {
+          api.getProfile().catch((error) => {
+            console.log('Profile not found, creating...', { email, name });
             // Profile doesn't exist, create it
-            api.createProfile(email, name).catch(() => {
-              // Ignore any errors during creation
-            });
+            api.createProfile(email, name)
+              .then(() => console.log('Profile created successfully'))
+              .catch((err) => {
+                console.error('Failed to create profile:', err);
+              });
           });
         }
 
