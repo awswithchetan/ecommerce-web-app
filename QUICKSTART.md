@@ -107,44 +107,108 @@ export default awsConfig;
 
 ## Step 4: Start the Application
 
-### 4.1 Start Backend Services
+Choose your deployment environment:
+
+---
+
+### Option A: Local Development (Recommended for First-Time Setup)
+
+#### 4A.1 Start Backend Services
 
 ```bash
 cd local-deployment
-docker-compose up --build
+docker compose up --build
 ```
 
-Wait for all services to start (~2 minutes). You should see:
-- ✅ LocalStack running
-- ✅ PostgreSQL running
-- ✅ All 5 microservices running
-- ✅ Nginx running
+Wait for all services to start (~2 minutes).
 
-### 4.2 Configure Frontend API URL
-
-Edit `frontend/react-app/.env`:
-
-**For local development:**
-```
-REACT_APP_API_URL=http://localhost:8080/api
-```
-
-**For EC2 deployment:**
-```
-REACT_APP_API_URL=http://<EC2-PUBLIC-IP>:8080/api
-```
-
-### 4.3 Start Frontend
-
-Open a new terminal:
+#### 4A.2 Create and Configure .env File
 
 ```bash
-cd frontend/react-app
+cd ../frontend/react-app
+
+# Create .env file
+cat > .env << 'EOF'
+REACT_APP_API_URL=http://localhost:8080/api
+EOF
+```
+
+#### 4A.3 Start Frontend
+
+```bash
 npm install
 npm start
 ```
 
-Browser will open at http://localhost:3000
+Browser will automatically open at http://localhost:3000
+
+✅ **You're ready to test!** Skip to Step 5.
+
+---
+
+### Option B: EC2 Deployment
+
+#### 4B.1 Configure EC2 Security Group
+
+In AWS Console → EC2 → Security Groups → Your instance's security group:
+
+Add these **Inbound Rules**:
+
+| Type | Protocol | Port | Source | Description |
+|------|----------|------|--------|-------------|
+| SSH | TCP | 22 | Your IP | SSH access |
+| Custom TCP | TCP | 3000 | 0.0.0.0/0 | Frontend |
+| Custom TCP | TCP | 8080 | 0.0.0.0/0 | API Gateway |
+
+#### 4B.2 Get EC2 Public IP
+
+```bash
+# On EC2 instance, run:
+curl http://checkip.amazonaws.com
+```
+
+Or find it in AWS Console → EC2 → Instances → Your instance → Public IPv4 address
+
+#### 4B.3 Start Backend Services
+
+```bash
+cd local-deployment
+docker compose up --build -d
+```
+
+#### 4B.4 Create and Configure .env File
+
+```bash
+cd ../frontend/react-app
+
+# Replace <EC2-PUBLIC-IP> with your actual IP
+cat > .env << 'EOF'
+REACT_APP_API_URL=http://<EC2-PUBLIC-IP>:8080/api
+EOF
+
+# Edit the file to add your actual IP
+nano .env
+```
+
+#### 4B.5 Start Frontend
+
+```bash
+npm install
+HOST=0.0.0.0 npm start
+```
+
+**Note:** `HOST=0.0.0.0` makes the app accessible from outside the EC2 instance.
+
+#### 4B.6 Access the Application
+
+Open your browser and go to:
+```
+http://<EC2-PUBLIC-IP>:3000
+```
+
+✅ **You're ready to test!**
+
+---
 
 ## Step 5: Test the Application
 
