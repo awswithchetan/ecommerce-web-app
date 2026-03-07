@@ -2,15 +2,36 @@
 
 ## Prerequisites
 
-- Docker and Docker Compose installed
-- Node.js 18+ installed
 - AWS Account (free tier)
+- EC2 instance or local Linux/Mac machine
 
-## Step 1: Clone the Repository
+## Step 1: Install Prerequisites
+
+### On EC2 (Amazon Linux 2023/AL2):
 
 ```bash
-git clone <your-repo-url>
-cd ecommerce-aws-tutorial
+# Install git first
+sudo yum install git -y
+
+# Clone the repository
+git clone https://github.com/awswithchetan/ecommerce-web-app.git
+cd ecommerce-web-app
+
+# Run installation script
+chmod +x install-prerequisites.sh
+./install-prerequisites.sh
+
+# Log out and back in for Docker group changes
+exit
+# SSH back into your instance
+```
+
+### On Local Machine:
+Ensure you have Docker, Docker Compose, and Node.js 20+ installed.
+
+```bash
+git clone https://github.com/awswithchetan/ecommerce-web-app.git
+cd ecommerce-web-app
 ```
 
 ## Step 2: Create AWS Cognito User Pool
