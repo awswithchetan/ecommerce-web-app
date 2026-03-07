@@ -1,0 +1,182 @@
+[
+  {
+    "product_id": "prod-001",
+    "name": "Wireless Bluetooth Headphones",
+    "description": "Premium noise-cancelling over-ear headphones with 30-hour battery life",
+    "price": 89.99,
+    "stock": 150,
+    "category": "Electronics",
+    "image_url": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400"
+  },
+  {
+    "product_id": "prod-002",
+    "name": "Smart Watch Series 5",
+    "description": "Fitness tracker with heart rate monitor, GPS, and water resistance",
+    "price": 299.99,
+    "stock": 85,
+    "category": "Electronics",
+    "image_url": "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400"
+  },
+  {
+    "product_id": "prod-003",
+    "name": "Mechanical Gaming Keyboard",
+    "description": "RGB backlit mechanical keyboard with Cherry MX switches",
+    "price": 129.99,
+    "stock": 200,
+    "category": "Electronics",
+    "image_url": "https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400"
+  },
+  {
+    "product_id": "prod-004",
+    "name": "4K Webcam",
+    "description": "Ultra HD webcam with auto-focus and built-in microphone",
+    "price": 79.99,
+    "stock": 120,
+    "category": "Electronics",
+    "image_url": "https://images.unsplash.com/photo-1588508065123-287b28e013da?w=400"
+  },
+  {
+    "product_id": "prod-005",
+    "name": "Wireless Gaming Mouse",
+    "description": "Ergonomic wireless mouse with 16000 DPI and RGB lighting",
+    "price": 59.99,
+    "stock": 250,
+    "category": "Electronics",
+    "image_url": "https://images.unsplash.com/photo-1527814050087-3793815479db?w=400"
+  },
+  {
+    "product_id": "prod-006",
+    "name": "USB-C Hub 7-in-1",
+    "description": "Multi-port adapter with HDMI, USB 3.0, SD card reader",
+    "price": 39.99,
+    "stock": 300,
+    "category": "Electronics",
+    "image_url": "https://images.unsplash.com/photo-1625948515291-69613efd103f?w=400"
+  },
+  {
+    "product_id": "prod-007",
+    "name": "Portable SSD 1TB",
+    "description": "External solid state drive with USB 3.2 Gen 2 speeds",
+    "price": 119.99,
+    "stock": 180,
+    "category": "Electronics",
+    "image_url": "https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=400"
+  },
+  {
+    "product_id": "prod-008",
+    "name": "Laptop Stand Aluminum",
+    "description": "Adjustable ergonomic laptop stand for better posture",
+    "price": 34.99,
+    "stock": 220,
+    "category": "Accessories",
+    "image_url": "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400"
+  },
+  {
+    "product_id": "prod-009",
+    "name": "Wireless Charging Pad",
+    "description": "Fast wireless charger compatible with all Qi-enabled devices",
+    "price": 24.99,
+    "stock": 400,
+    "category": "Electronics",
+    "image_url": "https://images.unsplash.com/photo-1591290619762-c588f0e8e23f?w=400"
+  },
+  {
+    "product_id": "prod-010",
+    "name": "Bluetooth Speaker Portable",
+    "description": "Waterproof speaker with 360° sound and 12-hour battery",
+    "price": 49.99,
+    "stock": 175,
+    "category": "Electronics",
+    "image_url": "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400"
+  },
+  {
+    "product_id": "prod-011",
+    "name": "HD Monitor 27-inch",
+    "description": "IPS display with 1920x1080 resolution and ultra-thin bezels",
+    "price": 189.99,
+    "stock": 95,
+    "category": "Electronics",
+    "image_url": "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=400"
+  },
+  {
+    "product_id": "prod-012",
+    "name": "Desk Lamp LED",
+    "description": "Adjustable LED desk lamp with touch control and USB port",
+    "price": 29.99,
+    "stock": 280,
+    "category": "Accessories",
+    "image_url": "https://images.unsplash.com/photo-1507473885765-e6ed057f782c?w=400"
+  },
+  {
+    "product_id": "prod-013",
+    "name": "Laptop Backpack",
+    "description": "Water-resistant backpack with padded laptop compartment up to 15.6\"",
+    "price": 44.99,
+    "stock": 160,
+    "category": "Accessories",
+    "image_url": "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400"
+  },
+  {
+    "product_id": "prod-014",
+    "name": "Microphone USB Condenser",
+    "description": "Professional USB microphone for streaming and podcasting",
+    "price": 69.99,
+    "stock": 140,
+    "category": "Electronics",
+    "image_url": "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=400"
+  },
+  {
+    "product_id": "prod-015",
+    "name": "Cable Management Kit",
+    "description": "Complete cable organizer set with clips, sleeves, and ties",
+    "price": 19.99,
+    "stock": 350,
+    "category": "Accessories",
+    "image_url": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400"
+  },
+  {
+    "product_id": "prod-016",
+    "name": "Ergonomic Office Chair",
+    "description": "Adjustable mesh office chair with lumbar support",
+    "price": 249.99,
+    "stock": 65,
+    "category": "Furniture",
+    "image_url": "https://images.unsplash.com/photo-1580480055273-228ff5388ef8?w=400"
+  },
+  {
+    "product_id": "prod-017",
+    "name": "Ring Light 10-inch",
+    "description": "LED ring light with tripod stand for photography and video",
+    "price": 39.99,
+    "stock": 190,
+    "category": "Electronics",
+    "image_url": "https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400"
+  },
+  {
+    "product_id": "prod-018",
+    "name": "Power Bank 20000mAh",
+    "description": "High-capacity portable charger with dual USB ports",
+    "price": 34.99,
+    "stock": 210,
+    "category": "Electronics",
+    "image_url": "https://images.unsplash.com/photo-1609091839311-d5365f9ff1c5?w=400"
+  },
+  {
+    "product_id": "prod-019",
+    "name": "HDMI Cable 6ft",
+    "description": "High-speed HDMI 2.1 cable supporting 4K@120Hz",
+    "price": 14.99,
+    "stock": 500,
+    "category": "Accessories",
+    "image_url": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400"
+  },
+  {
+    "product_id": "prod-020",
+    "name": "Webcam Privacy Cover",
+    "description": "Sliding webcam cover for laptops and tablets - 3 pack",
+    "price": 9.99,
+    "stock": 600,
+    "category": "Accessories",
+    "image_url": "https://images.unsplash.com/photo-1550009158-9ebf69173e03?w=400"
+  }
+]

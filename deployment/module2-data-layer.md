@@ -267,49 +267,33 @@ aws dynamodb update-time-to-live \
 ```
 
 ### Seed Products Table with Sample Data
+
+**Option 1: Use provided data file (Recommended)**
+```bash
+cd data
+./load-products.sh ecommerce-products ap-south-1
+```
+
+This loads 20 sample products from `data/products.json`.
+
+**Option 2: Manual CLI commands**
 ```bash
 # Product 1
 aws dynamodb put-item \
   --table-name ecommerce-products \
   --item '{
     "product_id": {"S": "prod-001"},
-    "name": {"S": "Laptop"},
-    "description": {"S": "High-performance laptop"},
-    "price": {"N": "999.99"},
-    "stock": {"N": "50"},
-    "image_url": {"S": "https://via.placeholder.com/300"},
-    "category": {"S": "Electronics"}
-  }' \
-  --region ap-south-1
-
-# Product 2
-aws dynamodb put-item \
-  --table-name ecommerce-products \
-  --item '{
-    "product_id": {"S": "prod-002"},
-    "name": {"S": "Wireless Mouse"},
-    "description": {"S": "Ergonomic wireless mouse"},
-    "price": {"N": "29.99"},
-    "stock": {"N": "200"},
-    "image_url": {"S": "https://via.placeholder.com/300"},
-    "category": {"S": "Electronics"}
-  }' \
-  --region ap-south-1
-
-# Product 3
-aws dynamodb put-item \
-  --table-name ecommerce-products \
-  --item '{
-    "product_id": {"S": "prod-003"},
-    "name": {"S": "Mechanical Keyboard"},
-    "description": {"S": "RGB mechanical keyboard"},
-    "price": {"N": "149.99"},
-    "stock": {"N": "75"},
-    "image_url": {"S": "https://via.placeholder.com/300"},
+    "name": {"S": "Wireless Bluetooth Headphones"},
+    "description": {"S": "Premium noise-cancelling over-ear headphones"},
+    "price": {"N": "89.99"},
+    "stock": {"N": "150"},
+    "image_url": {"S": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400"},
     "category": {"S": "Electronics"}
   }' \
   --region ap-south-1
 ```
+
+See `data/products.json` for all 20 products.
 
 ### Create DB Subnet Group
 ```bash
