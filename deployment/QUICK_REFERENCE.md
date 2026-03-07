@@ -5,7 +5,7 @@
 | Module | Services | Time | Difficulty | Cost/Month |
 |--------|----------|------|------------|------------|
 | 1. Networking | VPC, Subnets, IGW, NAT, Route Tables | 30-45 min | ⭐⭐ | $32 |
-| 2. Data Layer | RDS PostgreSQL | 20-30 min | ⭐⭐ | $15-20 |
+| 2. Data Layer | DynamoDB, RDS PostgreSQL | 20-30 min | ⭐⭐ | $16-25 |
 | 3. Authentication | Cognito | 20-30 min | ⭐⭐ | Free |
 | 4. Containers | ECR, ECS, ALB | 60-90 min | ⭐⭐⭐⭐ | $131 |
 | 5. API Gateway | API Gateway, VPC Link | 30-45 min | ⭐⭐⭐ | $10 |
@@ -13,7 +13,7 @@
 | 7. Frontend | S3, CloudFront | 30-45 min | ⭐⭐ | $10 |
 | 8. DNS & SSL | Route53, ACM | 30-45 min | ⭐⭐ | $1 |
 
-**Total:** 4-6 hours | ~$200/month
+**Total:** 4-6 hours | ~$200-215/month
 
 ## Files Created
 
@@ -184,7 +184,10 @@ Module 8 (DNS) ← depends on Frontend
 - Security groups
 
 ### Module 2: Data Layer
-- Managed databases
+- NoSQL vs SQL databases
+- DynamoDB partition and sort keys
+- DynamoDB on-demand pricing
+- RDS managed databases
 - Multi-AZ deployments
 - Automated backups
 - Security group rules

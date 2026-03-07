@@ -32,6 +32,10 @@ User → Route53 → CloudFront → S3 (Frontend)
                                     │                             │
                                   RDS                      SNS → SQS → SES
                               PostgreSQL                  (Notifications)
+                            (Users, Orders)
+                                    
+                              DynamoDB (Global)
+                          (Products, Cart - Module 2)
 ```
 
 ## Modules
@@ -56,16 +60,17 @@ Create the network infrastructure:
 
 ### [Module 2: Data Layer](./module2-data-layer.md)
 **Time:** 20-30 minutes  
-**Services:** RDS PostgreSQL
+**Services:** DynamoDB, RDS PostgreSQL
 
-Set up the database:
-- RDS PostgreSQL instance in private subnets
-- Multi-AZ for high availability (optional)
+Set up the databases:
+- DynamoDB tables for products and cart (NoSQL, high performance)
+- RDS PostgreSQL instance for users and orders (relational, ACID)
 - Security groups for database access
-- Automated backups
+- Sample data seeding
 
 **Key Concepts:**
-- Managed databases
+- NoSQL vs SQL databases
+- When to use DynamoDB vs RDS
 - Database security
 - Backup and recovery
 - Connection management
@@ -196,6 +201,7 @@ Configure custom domain:
 | Service | Cost |
 |---------|------|
 | VPC (NAT Gateway) | $32 |
+| DynamoDB (On-Demand) | $1-5 |
 | RDS (db.t3.micro) | $15-20 |
 | ECS Fargate (4 services) | $115 |
 | ALB | $16 |
@@ -205,7 +211,7 @@ Configure custom domain:
 | S3 | $5 |
 | CloudFront | $5-10 |
 | Route53 | $1 |
-| **Total** | **~$200-210/month** |
+| **Total** | **~$200-215/month** |
 
 **Cost Optimization Tips:**
 - Use Spot instances for non-critical services
