@@ -1,4 +1,4 @@
-# Module 10: Search with OpenSearch
+# Module 10: Search with OpenSearch (Optional)
 
 ## Overview
 Add full-text product search using Amazon OpenSearch Service. The search service runs as an ECS/Fargate container behind the existing internal ALB — same pattern as the other microservices. Product data is automatically synced to OpenSearch via DynamoDB Streams and a simple Lambda function (no packaging required).
