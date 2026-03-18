@@ -1,28 +1,25 @@
 # Module 10: Search with OpenSearch
 
 ## Overview
-Add full-text product search to the ecommerce application using Amazon OpenSearch Service. Product data is automatically synced from DynamoDB to OpenSearch via DynamoDB Streams and a Lambda indexer. Search requests are handled by a Lambda function sitting behind the existing internal ALB.
+Add full-text product search using Amazon OpenSearch Service. The search service runs as an ECS/Fargate container behind the existing internal ALB — same pattern as the other microservices. Product data is automatically synced to OpenSearch via DynamoDB Streams and a simple Lambda function (no packaging required).
 
 ## What We'll Build
 - **10.1** Amazon OpenSearch domain
-- **10.2** IAM role for Lambda
-- **10.3** Lambda deployment package
-- **10.4** Lambda functions (search handler + DynamoDB indexer)
-- **10.5** ALB Lambda target group and listener rule for `/search`
-- **10.6** DynamoDB Stream to trigger the indexer
-- **10.7** Bulk index existing products
-- **10.8** Add API Gateway route for `/search`
-- **10.9** Test search functionality
+- **10.2** Search service — ECR, ECS task definition and service
+- **10.3** ALB target group and listener rule for `/search`
+- **10.4** Parameter Store configuration for OpenSearch
+- **10.5** DynamoDB Stream → Lambda indexer (inline code, no packaging)
+- **10.6** Bulk index existing products
+- **10.7** Add API Gateway route for `/search`
+- **10.8** Test search functionality
 
 ## Architecture
 ```
-Browser → API Gateway → VPC Link → Internal ALB → /search* → Lambda (Search Handler)
+Browser → API Gateway → VPC Link → Internal ALB → /search* → ECS Search Service → OpenSearch
                                                  → /products* → ECS Product Service
 
 DynamoDB (products) → DynamoDB Stream → Lambda (Indexer) → OpenSearch
 ```
-
-The search Lambda handles ALB requests directly. A separate Lambda indexer keeps OpenSearch in sync with DynamoDB changes in real time.
 
 ---
 
@@ -44,9 +41,9 @@ The search Lambda handles ALB requests directly. A separate Lambda indexer keeps
 10. **Network:** VPC access
 11. **VPC:** `ecommerce-vpc`
 12. **Subnet:** Select one **private ECS subnet** (e.g., `ecommerce-private-ecs-1`)
-13. **Security groups:** Create new security group:
+13. **Security groups:** Create new:
     - **Name:** `ecommerce-opensearch-sg`
-    - **Inbound:** HTTPS (443) from `ecommerce-ecs-sg` and from the Lambda security group (create below)
+    - **Inbound:** HTTPS (443) from `ecommerce-ecs-sg` (ECS tasks can reach OpenSearch)
     - **Outbound:** All traffic
 
 ### Access Policy
@@ -55,196 +52,197 @@ The search Lambda handles ALB requests directly. A separate Lambda indexer keeps
 16. **Master user:** Create master user
     - **Username:** `admin`
     - **Password:** (create a strong password and save it)
-17. **Create domain** (takes 10-15 minutes)
+17. **Create domain** — takes 10-15 minutes
 
 ### Save These Values
 - **Domain endpoint** (e.g., `https://search-ecommerce-search-xxxx.us-west-2.es.amazonaws.com`)
 
 ---
 
-## 10.2 Create IAM Role for Lambda
+## 10.2 Deploy Search Service to ECS
 
-### Create Lambda Security Group
+### 10.2.1 Create ECR Repository
 
-1. **VPC Console → Security Groups → Create security group**
-2. **Name:** `ecommerce-lambda-sg`
-3. **VPC:** `ecommerce-vpc`
-4. **Inbound rules:** None
-5. **Outbound rules:** All traffic (Lambda needs to reach OpenSearch and DynamoDB)
-6. **Create**
+1. **ECR Console → Repositories → Create repository**
+2. **Repository name:** `ecommerce/search-service`
+3. **Create repository**
 
-Then update `ecommerce-opensearch-sg` inbound rules to allow HTTPS (443) from `ecommerce-lambda-sg`.
-
-### Create Lambda Execution Role
-
-1. **IAM Console → Roles → Create role**
-2. **Trusted entity:** AWS service → Lambda
-3. **Attach policies:**
-   - `AWSLambdaVPCAccessExecutionRole` (for VPC + CloudWatch Logs)
-   - `AmazonDynamoDBReadOnlyAccess` (for stream access)
-4. **Role name:** `ecommerce-lambda-search-role`
-5. **Create role**
-
----
-
-## 10.3 Create Lambda Deployment Package
-
-The Lambda function requires `opensearch-py` and `requests-aws4auth` which are not available in the default Lambda runtime. Package them with the function code.
+### 10.2.2 Build and Push Docker Image
 
 ```bash
+aws ecr get-login-password --region <your-region> | docker login --username AWS --password-stdin <account-id>.dkr.ecr.<your-region>.amazonaws.com
+
 cd services/search-service
-
-# Install dependencies into a package directory
-pip install -r requirements.txt -t package/
-
-# Copy function code
-cp lambda_function.py package/
-
-# Create zip
-cd package
-zip -r ../search-service.zip .
-cd ..
+docker build -t ecommerce/search-service .
+docker tag ecommerce/search-service:latest <account-id>.dkr.ecr.<your-region>.amazonaws.com/ecommerce/search-service:latest
+docker push <account-id>.dkr.ecr.<your-region>.amazonaws.com/ecommerce/search-service:latest
 ```
 
-This creates `services/search-service/search-service.zip`.
-
----
-
-## 10.4 Create Lambda Functions
-
-### 10.4.1 Search Handler Lambda (ALB)
-
-1. **Lambda Console → Functions → Create function**
-2. **Function name:** `ecommerce-search-handler`
-3. **Runtime:** Python 3.11
-4. **Architecture:** x86_64
-5. **Execution role:** Use existing role → `ecommerce-lambda-search-role`
-6. **Create function**
-
-**Upload code:**
-7. **Code tab → Upload from → .zip file**
-8. **Upload** `search-service.zip`
-9. **Handler:** `lambda_function.search_handler`
-
-**Environment variables:**
-10. **Configuration → Environment variables → Edit:**
-    - `OPENSEARCH_ENDPOINT` = `<your-domain-endpoint-without-https>` (e.g., `search-ecommerce-search-xxxx.us-west-2.es.amazonaws.com`)
-    - `AWS_REGION` = `<your-region>`
-
-**VPC configuration:**
-11. **Configuration → VPC → Edit:**
-    - VPC: `ecommerce-vpc`
-    - Subnets: Both private ECS subnets
-    - Security groups: `ecommerce-lambda-sg`
-12. **Save**
-
-**Timeout:**
-13. **Configuration → General configuration → Edit:**
-    - Timeout: 30 seconds
-14. **Save**
-
-### 10.4.2 DynamoDB Indexer Lambda
-
-1. **Create function**
-2. **Function name:** `ecommerce-dynamodb-indexer`
-3. **Runtime:** Python 3.11
-4. **Execution role:** `ecommerce-lambda-search-role`
-5. **Create function**
-6. **Upload** same `search-service.zip`
-7. **Handler:** `lambda_function.indexer_handler`
-8. **Same environment variables and VPC configuration as above**
-
----
-
-## 10.5 Add Lambda Target Group and ALB Listener Rule
-
-### Create Lambda Target Group
+### 10.2.3 Create Target Group
 
 1. **EC2 Console → Target Groups → Create target group**
-2. **Target type:** Lambda function
+2. **Target type:** IP addresses
 3. **Target group name:** `ecommerce-search-tg`
-4. **Register targets:** Select `ecommerce-search-handler`
-5. **Create target group**
+4. **Protocol:** HTTP, Port: **8005**
+5. **VPC:** `ecommerce-vpc`
+6. **Health check path:** `/health`
+7. **Create target group**
 
-### Add ALB Listener Rule
+### 10.2.4 Add ALB Listener Rule
 
 1. **EC2 Console → Load Balancers → ecommerce-internal-alb**
-2. **Listeners → HTTP:80 → View/edit rules**
-3. **Add rule** (insert before the default rule):
+2. **Listeners → HTTP:80 → View/edit rules → Add rule:**
    - **IF:** Path is `/search*`
    - **THEN:** Forward to `ecommerce-search-tg`
-4. **Save**
+3. **Save**
+
+### 10.2.5 Create ECS Task Definition
+
+1. **ECS Console → Task definitions → Create new task definition**
+2. **Task definition family:** `ecommerce-search-service`
+3. **Launch type:** AWS Fargate
+4. **Operating system:** Linux/X86_64
+5. **CPU:** 0.25 vCPU, **Memory:** 0.5 GB
+6. **Task role:** `ecommerce-ecs-task-role`
+7. **Task execution role:** `ecsTaskExecutionRole`
+8. **Container:**
+   - **Name:** `search-service`
+   - **Image URI:** `<account-id>.dkr.ecr.<your-region>.amazonaws.com/ecommerce/search-service:latest`
+   - **Port:** 8005
+   - **Environment variables:**
+     - `ENVIRONMENT` = `dev`
+     - `AWS_REGION` = `<your-region>`
+   - **Log configuration:** awslogs, log group `/ecs/ecommerce-search-service`
+9. **Create task definition**
+
+### 10.2.6 Create ECS Service
+
+1. **ECS Console → Clusters → ecommerce-cluster → Services → Create**
+2. **Launch type:** Fargate
+3. **Task definition:** `ecommerce-search-service:1`
+4. **Service name:** `ecommerce-search-service`
+5. **Desired tasks:** 1
+6. **VPC:** `ecommerce-vpc`
+7. **Subnets:** Both private ECS subnets
+8. **Security group:** `ecommerce-ecs-sg`
+9. **Public IP:** Disabled
+10. **Load balancing:** Application Load Balancer → `ecommerce-internal-alb`
+11. **Target group:** `ecommerce-search-tg`
+12. **Create service**
 
 ---
 
-## 10.6 Enable DynamoDB Stream
+## 10.3 Add Parameter Store Configuration
 
-1. **DynamoDB Console → Tables → ecommerce-products**
-2. **Exports and streams tab → DynamoDB stream details → Enable**
-3. **View type:** New and old images
-4. **Enable stream**
+1. **Systems Manager Console → Parameter Store → Create parameter**
 
-### Add Stream Trigger to Indexer Lambda
+**OpenSearch Endpoint:**
+- **Name:** `/ecommerce/dev/opensearch/endpoint`
+- **Type:** String
+- **Value:** `https://<your-opensearch-domain-endpoint>`
 
-1. **Lambda Console → ecommerce-dynamodb-indexer → Configuration → Triggers → Add trigger**
-2. **Source:** DynamoDB
-3. **Table:** `ecommerce-products`
-4. **Batch size:** 100
-5. **Starting position:** Latest
-6. **Add**
+**OpenSearch Username:**
+- **Name:** `/ecommerce/dev/opensearch/username`
+- **Type:** String
+- **Value:** `admin`
+
+**OpenSearch Password:**
+- **Name:** `/ecommerce/dev/opensearch/password`
+- **Type:** SecureString
+- **Value:** `<your-opensearch-master-password>`
 
 ---
 
-## 10.7 Bulk Index Existing Products
+## 10.4 DynamoDB Stream → Lambda Indexer
 
-The DynamoDB Stream only captures changes going forward. Bulk index existing products using the AWS CLI:
+### Create Lambda Function
+
+1. **Lambda Console → Functions → Create function**
+2. **Function name:** `ecommerce-dynamodb-indexer`
+3. **Runtime:** Python 3.11
+4. **Execution role:** Create new role with basic Lambda permissions
+   - After creation, attach `AmazonDynamoDBReadOnlyAccess` to the role
+5. **Create function**
+
+### Paste Inline Code
+
+6. **Code tab → Edit inline**
+7. **Copy and paste the contents of `services/search-service/dynamodb_indexer.py`**
+8. **Deploy**
+
+### Set Environment Variables
+
+9. **Configuration → Environment variables → Edit:**
+   - `OPENSEARCH_ENDPOINT` = `https://<your-opensearch-domain-endpoint>`
+   - `OPENSEARCH_USERNAME` = `admin`
+   - `OPENSEARCH_PASSWORD` = `<your-master-password>`
+
+### Enable DynamoDB Stream
+
+10. **DynamoDB Console → Tables → ecommerce-products**
+11. **Exports and streams tab → DynamoDB stream details → Enable**
+12. **View type:** New and old images
+13. **Enable stream**
+
+### Add Stream Trigger
+
+14. **Lambda Console → ecommerce-dynamodb-indexer → Configuration → Triggers → Add trigger**
+15. **Source:** DynamoDB
+16. **Table:** `ecommerce-products`
+17. **Batch size:** 100
+18. **Starting position:** Latest
+19. **Add**
+
+---
+
+## 10.5 Bulk Index Existing Products
+
+The DynamoDB Stream only captures changes going forward. Run this script to index all existing products.
+
+**Run from a bastion host or any machine with VPC access:**
 
 ```bash
-# Export all products from DynamoDB
-aws dynamodb scan \
-  --table-name ecommerce-products \
-  --region <your-region> \
-  --output json | \
-  python3 -c "
-import json, sys, boto3
+# Export products from DynamoDB and bulk index into OpenSearch
+python3 << 'EOF'
+import boto3, json, urllib.request, urllib.error, base64
 
-data = json.load(sys.stdin)
-deserializer = boto3.dynamodb.types.TypeDeserializer()
-products = [{k: deserializer.deserialize(v) for k, v in item.items()} for item in data['Items']]
+REGION = '<your-region>'
+OPENSEARCH_ENDPOINT = 'https://<your-opensearch-endpoint>'
+USERNAME = 'admin'
+PASSWORD = '<your-password>'
+INDEX = 'products'
 
-# Build OpenSearch bulk request
+# Fetch all products from DynamoDB
+dynamodb = boto3.resource('dynamodb', region_name=REGION)
+table = dynamodb.Table('ecommerce-products')
+products = table.scan()['Items']
+
+# Build bulk request body
 bulk = ''
 for p in products:
-    bulk += json.dumps({'index': {'_index': 'products', '_id': p['product_id']}}) + '\n'
+    bulk += json.dumps({'index': {'_index': INDEX, '_id': p['product_id']}}) + '\n'
     bulk += json.dumps(p) + '\n'
 
-with open('/tmp/bulk.json', 'w') as f:
-    f.write(bulk)
-print(f'Prepared {len(products)} products for indexing')
-"
-
-# Send bulk request to OpenSearch (run from within VPC or use a bastion host)
-curl -X POST \
-  "https://<opensearch-endpoint>/products/_bulk" \
-  -H "Content-Type: application/x-ndjson" \
-  -u "admin:<password>" \
-  --data-binary @/tmp/bulk.json
+# Send to OpenSearch
+auth = base64.b64encode(f"{USERNAME}:{PASSWORD}".encode()).decode()
+req = urllib.request.Request(
+    f"{OPENSEARCH_ENDPOINT}/{INDEX}/_bulk",
+    data=bulk.encode(),
+    method='POST',
+    headers={'Content-Type': 'application/x-ndjson', 'Authorization': f'Basic {auth}'}
+)
+with urllib.request.urlopen(req) as resp:
+    result = json.loads(resp.read())
+    errors = [i for i in result.get('items', []) if 'error' in i.get('index', {})]
+    print(f"Indexed {len(products)} products. Errors: {len(errors)}")
+EOF
 ```
-
-**Note:** The OpenSearch domain is in a private VPC subnet. Run the curl command from a bastion host or an EC2 instance in the same VPC.
 
 ---
 
-## 10.8 Add API Gateway Route for `/search`
+## 10.6 Add API Gateway Route for `/search`
 
-The existing API Gateway already routes all traffic through the ALB via VPC Link. Since the ALB now has a `/search*` rule, no new API Gateway integration is needed — just verify the existing `ANY /{proxy+}` route covers it.
-
-**Test the route is reachable:**
-```bash
-curl "https://<api-gateway-url>/search?q=headphones"
-```
-
-If this returns a 401 (JWT required), add a dedicated public route for search:
+The existing `ANY /{proxy+}` route requires JWT authentication. Add a dedicated public route for search:
 
 1. **API Gateway Console → your API → Routes → Create route**
 2. **Method:** GET
@@ -255,7 +253,7 @@ If this returns a 401 (JWT required), add a dedicated public route for search:
 
 ---
 
-## 10.9 Test Search
+## 10.7 Test Search
 
 **Test via API Gateway:**
 ```bash
@@ -269,28 +267,26 @@ curl "https://<api-gateway-url>/search?category=Electronics"
 curl "https://<api-gateway-url>/search?q=wireless&category=Electronics"
 ```
 
-**Expected response:** JSON array of matching products, ranked by relevance.
-
 **Test via frontend:**
 1. Open your CloudFront URL
 2. Type in the search bar on the Products page
-3. Results should update with matched products
+3. Results update with matched products ranked by relevance
 
 ### Troubleshooting
 
-**Lambda timeout / connection refused:**
-- Verify Lambda VPC config uses private ECS subnets
-- Confirm `ecommerce-opensearch-sg` allows HTTPS from `ecommerce-lambda-sg`
-- Check Lambda CloudWatch logs: `/aws/lambda/ecommerce-search-handler`
-
-**Empty search results after bulk index:**
-- Verify the bulk index curl ran successfully (check for errors in response)
-- Check OpenSearch index exists: `curl -u admin:<password> https://<endpoint>/products/_count`
+**Empty search results:**
+- Verify bulk index ran successfully
+- Check ECS search service logs in CloudWatch: `/ecs/ecommerce-search-service`
+- Confirm `ecommerce-opensearch-sg` allows HTTPS (443) from `ecommerce-ecs-sg`
 
 **DynamoDB stream not triggering indexer:**
 - Confirm stream is enabled on the products table
 - Check Lambda trigger is in "Enabled" state
-- Review indexer logs: `/aws/lambda/ecommerce-dynamodb-indexer`
+- Review Lambda logs: `/aws/lambda/ecommerce-dynamodb-indexer`
+
+**Search service not starting:**
+- Verify Parameter Store values are correct
+- Check ECS task has `ecommerce-ecs-task-role` with `AmazonSSMReadOnlyAccess`
 
 ## Next Steps
 Proceed to **[Module 11: Cleanup](./module11-cleanup.md)** to remove all AWS resources.

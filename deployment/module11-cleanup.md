@@ -14,10 +14,15 @@ Delete resources in reverse order of creation to avoid dependency issues:
 
 ### 2. Search (Module 10)
 - OpenSearch domain
-- Lambda functions (search-handler, dynamodb-indexer)
-- Lambda target group (ALB)
+- ECS search service (`ecommerce-search-service`)
+- ECS task definition (`ecommerce-search-service`)
+- ECR repository (`ecommerce/search-service`)
+- ALB target group (`ecommerce-search-tg`)
+- ALB listener rule for `/search*`
+- Lambda function (`ecommerce-dynamodb-indexer`)
 - DynamoDB Stream (disable on products table)
-- IAM role (Lambda execution role)
+- Parameter Store parameters (opensearch/*)
+- Security group (`ecommerce-opensearch-sg`)
 
 ### 3. Notification (Module 8)
 - SNS subscriptions (email, SQS)
