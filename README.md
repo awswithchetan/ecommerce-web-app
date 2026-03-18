@@ -77,7 +77,8 @@ The deployment is organized into modules:
 - Module 7: Frontend-Backend Integration
 - Module 8: Notification (SNS, SQS)
 - Module 9: Custom Domain & SSL (Route53, ACM)
-- Module 10: Cleanup
+- Module 10: Search (OpenSearch, Lambda, DynamoDB Streams)
+- Module 11: Cleanup
 
 **Time required**: 3-4 hours
 

@@ -75,7 +75,14 @@ Complete these modules in order:
 - Custom domain setup
 - SSL certificate configuration
 
-### [Module 10: Cleanup](./module10-cleanup.md)
+### [Module 10: Search](./module10-search.md)
+**Time:** 45-60 minutes  
+**Services:** OpenSearch, Lambda, DynamoDB Streams
+- Full-text product search with OpenSearch
+- Lambda search handler behind internal ALB
+- DynamoDB Stream → Lambda indexer for real-time sync
+
+### [Module 11: Cleanup](./module11-cleanup.md)
 **Time:** 15-20 minutes  
 - Remove all AWS resources
 - Avoid ongoing charges

@@ -26,6 +26,14 @@ const getAuthHeaders = async () => {
 };
 
 export const api = {
+  // Search (public)
+  searchProducts: (query, category) => {
+    const params = new URLSearchParams();
+    if (query) params.append('q', query);
+    if (category) params.append('category', category);
+    return fetch(`${API_BASE_URL}/search?${params.toString()}`).then(res => res.json());
+  },
+
   // Products (public)
   getProducts: () => 
     fetch(`${API_BASE_URL}/products`).then(res => res.json()),

@@ -1,4 +1,4 @@
-# Module 10: Cleanup
+# Module 11: Cleanup
 
 ## Overview
 Clean up all AWS resources created during this tutorial to avoid ongoing charges.
@@ -12,7 +12,14 @@ Delete resources in reverse order of creation to avoid dependency issues:
 - ACM SSL certificate
 - Route53 Public hosted zone
 
-### 2. Notification (Module 8)
+### 2. Search (Module 10)
+- OpenSearch domain
+- Lambda functions (search-handler, dynamodb-indexer)
+- Lambda target group (ALB)
+- DynamoDB Stream (disable on products table)
+- IAM role (Lambda execution role)
+
+### 3. Notification (Module 8)
 - SNS subscriptions (email, SQS)
 - SQS queue
 - SNS topic
